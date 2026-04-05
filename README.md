@@ -18,52 +18,84 @@ A tiny, zero-dependency behavior layer for smooth mouse and touch drag scrolling
 npm install shopify-drag-carousel
 ```
 
-## Example (developer reference)
-
-The package ships two demos that load sample products from [`GET https://api.escuelajs.co/api/v1/products`](https://api.escuelajs.co/docs) and show **manual** + **auto-init** carousels. Card layout/CSS is demo-only; the library only adds scroll behavior.
-
-### View on CDN (no clone, no install)
-
-After the package is **published to npm**, open this URL in a browser:
-
-**https://unpkg.com/shopify-drag-carousel@1/examples/demo-cdn.html**
-
-That page loads `index.js` and `style.css` from **unpkg** (`shopify-drag-carousel@1`). Pin a version (e.g. `@1.0.0`) if you need a fixed release.
-
-### Run locally (repo or `npm install`)
-
-Serve the package root over **http** (not `file://`), then open **`examples/demo.html`** (relative paths to the library).
-
-```bash
-npm run demo
+```js
+const DragCarousel = require("shopify-drag-carousel");
 ```
 
-→ **http://localhost:5173/examples/demo.html** (root **`demo.html`** redirects there.)
+---
 
-Or: `npm install shopify-drag-carousel`, then `npx serve node_modules/shopify-drag-carousel` and open **`/examples/demo.html`**.
+## Quick start (browser)
 
-## CDN (no build step)
-
-Script (global `DragCarousel` on `window`):
-
-```html
-<script src="https://cdn.jsdelivr.net/npm/shopify-drag-carousel@1/index.js"></script>
-```
-
-Optional CSS for the dragging cursor:
+1. Add a horizontal row of children (your own layout: flex, grid, etc.).
+2. Put the library on the page, then add class **`drag-carousel`** to the scroll container.
 
 ```html
 <link
   rel="stylesheet"
   href="https://cdn.jsdelivr.net/npm/shopify-drag-carousel@1/style.css"
 />
+<div class="drag-carousel">
+  <div>Slide A</div>
+  <div>Slide B</div>
+  <div>Slide C</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/shopify-drag-carousel@1/index.js"></script>
 ```
 
-Pin a major version (`@1`) or an exact version in production.
+After load, `window.DragCarousel` is available. Auto-init runs on `DOMContentLoaded` for every `.drag-carousel`.
+
+**Manual init** (e.g. custom speed or arrows):
+
+```html
+<div id="strip"></div>
+<button type="button" id="prev" aria-label="Previous">←</button>
+<button type="button" id="next" aria-label="Next">→</button>
+<script src="https://cdn.jsdelivr.net/npm/shopify-drag-carousel@1/index.js"></script>
+<script>
+  new DragCarousel("#strip", {
+    speed: 1.5,
+    buttons: { prev: "#prev", next: "#next" },
+  });
+</script>
+```
+
+Do **not** put `class="drag-carousel"` on the same node if you also call `new DragCarousel` on it with options (avoid double init).
+
+---
+
+## CDN URLs
+
+Use a **major** tag (`@1`) or pin an exact version (`@1.0.0`) in production.
+
+| Asset | jsDelivr | unpkg |
+| ----- | -------- | ----- |
+| Script | [cdn.jsdelivr.net/npm/shopify-drag-carousel@1/index.js](https://cdn.jsdelivr.net/npm/shopify-drag-carousel@1/index.js) | [unpkg.com/shopify-drag-carousel@1/index.js](https://unpkg.com/shopify-drag-carousel@1/index.js) |
+| Styles (optional) | [cdn.jsdelivr.net/npm/shopify-drag-carousel@1/style.css](https://cdn.jsdelivr.net/npm/shopify-drag-carousel@1/style.css) | [unpkg.com/shopify-drag-carousel@1/style.css](https://unpkg.com/shopify-drag-carousel@1/style.css) |
+
+---
+
+## Live example (bundled demo)
+
+The package includes HTML examples under **`examples/`**:
+
+| Demo | What it is |
+| ---- | ----------- |
+| **[examples/demo-cdn.html](https://unpkg.com/shopify-drag-carousel@1/examples/demo-cdn.html)** | Full page on **unpkg** — loads the library from the CDN, fetches sample products from [api.escuelajs.co](https://api.escuelajs.co/docs), drag + prev/next. Requires the version to exist on [npm](https://www.npmjs.com/package/shopify-drag-carousel). |
+| **`examples/demo.html`** | Same UI with **relative** script paths — run a static server from the repo root (see below). |
+
+**Run the local demo** (clone or `npm install shopify-drag-carousel`, then serve the **package root** over `http://`, not `file://`):
+
+```bash
+npm run demo
+```
+
+Open [http://localhost:5173/examples/demo.html](http://localhost:5173/examples/demo.html) — or [http://localhost:5173/demo.html](http://localhost:5173/demo.html), which redirects to the example folder.
+
+---
 
 ## Shopify (Liquid)
 
-Drop the script (and optional stylesheet) in your theme—**theme.liquid** asset tags, or a section’s `{% schema %}` and `{% javascript %}` / `{% stylesheet %}` as you prefer.
+Load the script and optional CSS in your theme (e.g. `theme.liquid` or section assets).
 
 ```liquid
 <div class="drag-carousel">
@@ -73,61 +105,39 @@ Drop the script (and optional stylesheet) in your theme—**theme.liquid** asset
 </div>
 ```
 
-Give children whatever layout you use (flex row, grid, inline blocks, etc.). The library only enables horizontal scrolling and drag behavior.
-
-After **dynamic** updates (e.g. section AJAX), call:
+Style the row/cards yourself (flex, grid, etc.). After **dynamic** HTML (e.g. section AJAX), call:
 
 ```js
 DragCarousel.initAll();
 ```
 
-## Vanilla JavaScript
-
-**Automatic:** Add class `drag-carousel` to your container; initialization runs when the DOM is ready.
-
-**Manual:**
-
-```js
-const carousel = new DragCarousel('#my-row', {
-  speed: 1.5,
-  buttons: {
-    prev: '.prev-btn',
-    next: '.next-btn',
-  },
-});
-```
-
-**Node / CommonJS:**
-
-```js
-const DragCarousel = require('shopify-drag-carousel');
-new DragCarousel('.drag-carousel');
-```
+---
 
 ## API
 
 ### `new DragCarousel(selectorOrElement, options?)`
 
-| Option    | Type     | Default | Description                                      |
-| --------- | -------- | ------- | ------------------------------------------------ |
-| `speed`   | `number` | `1.5`   | Multiplier applied to pointer movement vs scroll |
-| `buttons` | `object` | `null`  | `{ prev: string, next: string }` CSS selectors   |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `speed` | `number` | `1.5` | Multiplier for pointer movement vs. scroll |
+| `buttons` | `object` | `null` | `{ prev: string, next: string }` — any valid `querySelector` string |
 
-String selectors use `document.querySelector` (first match). For multiple carousels, create one instance per element or rely on **auto-init** + class `drag-carousel`.
+Selectors resolve with `document.querySelector` (first match).
 
 ### `DragCarousel.initAll()`
 
-Finds all `.drag-carousel` elements that are not yet initialized and attaches behavior. Use after injecting new HTML.
+Initializes every `.drag-carousel` in the document that is not already initialized. Use after injecting new markup.
 
 ### `DragCarousel.isInitialized(element)`
 
-Returns whether the given element already has carousel behavior.
+Returns whether the element already has carousel behavior.
+
+---
 
 ## Constraints
 
-- No React or other UI framework required
-- No bundler required for browser usage
-- Intended to run directly in the browser via script tag or small bundles
+- No React required; no bundler required for browser usage
+- Intended for direct use via `<script>` or small bundles
 
 ## License
 
