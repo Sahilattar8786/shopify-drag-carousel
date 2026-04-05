@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>shopify-drag-carousel — example (CDN)</title>
+    <!-- Library from unpkg — no clone or npm install required to try the demo -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/shopify-drag-carousel@1/style.css"
+    />
+    <style>
+      :root {
+        --bg: #f4f2ef;
+        --surface: #ffffff;
+        --text: #1c1917;
+        --muted: #78716c;
+        --accent: #0d9488;
+        --accent-soft: rgba(13, 148, 136, 0.12);
+        --radius: 14px;
+        --shadow: 0 4px 20px rgba(28, 25, 23, 0.08);
+        --shadow-hover: 0 12px 32px rgba(28, 25, 23, 0.12);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+        color: var(--text);
+        background: radial-gradient(1200px 600px at 10% -10%, #e0f2f1 0%, transparent 55%),
+          radial-gradient(900px 500px at 100% 0%, #fef3c7 0%, transparent 50%), var(--bg);
+      }
+
+      .page {
+        max-width: 68rem;
+        margin: 0 auto;
+        padding: 2.5rem 1.25rem 4rem;
+      }
+
+      .hero {
+        text-align: center;
+        margin-bottom: 2.5rem;
+      }
+
+      .hero__eyebrow {
+        display: inline-block;
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--accent);
+        background: var(--accent-soft);
+        padding: 0.35rem 0.75rem;
+        border-radius: 999px;
+        margin-bottom: 0.75rem;
+      }
+
+      .hero h1 {
+        font-size: clamp(1.5rem, 4vw, 2rem);
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        margin: 0 0 0.5rem;
+      }
+
+      .hero p {
+        margin: 0 auto;
+        max-width: 36rem;
+        color: var(--muted);
+        line-height: 1.55;
+        font-size: 0.95rem;
+      }
+
+      .hero code {
+        font-size: 0.85em;
+        background: rgba(0, 0, 0, 0.06);
+        padding: 0.15rem 0.4rem;
+        border-radius: 6px;
+      }
+
+      .section {
+        margin-bottom: 2.75rem;
+      }
+
+      .section__head {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+      }
+
+      .section__title {
+        font-size: 1.125rem;
+        font-weight: 600;
+        margin: 0;
+      }
+
+      .section__hint {
+        font-size: 0.8rem;
+        color: var(--muted);
+        margin: 0.25rem 0 0;
+      }
+
+      .toolbar {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .toolbar button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.5rem;
+        height: 2.5rem;
+        border: 1px solid rgba(28, 25, 23, 0.12);
+        border-radius: 10px;
+        background: var(--surface);
+        cursor: pointer;
+        color: var(--text);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+        transition: background 0.15s, box-shadow 0.15s, transform 0.15s;
+      }
+
+      .toolbar button:hover:not(:disabled) {
+        background: #fafaf9;
+        box-shadow: var(--shadow);
+      }
+
+      .toolbar button:active:not(:disabled) {
+        transform: scale(0.96);
+      }
+
+      .toolbar button:disabled {
+        opacity: 0.35;
+        cursor: not-allowed;
+      }
+
+      /* Scroll track: flex row; library adds overflow + drag */
+      .scroller {
+        display: flex;
+        gap: 1rem;
+        padding: 0.5rem 0.25rem 1rem;
+        scroll-padding-inline: 0.25rem;
+      }
+
+      .scroller-wrap {
+        position: relative;
+        border-radius: var(--radius);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.72));
+        border: 1px solid rgba(28, 25, 23, 0.06);
+        box-shadow: var(--shadow);
+        padding: 0.75rem 0.5rem;
+      }
+
+      .product-card {
+        flex: 0 0 15rem;
+        min-width: 15rem;
+        background: var(--surface);
+        border-radius: var(--radius);
+        overflow: hidden;
+        border: 1px solid rgba(28, 25, 23, 0.06);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .product-card:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-hover);
+      }
+
+      .product-card__media {
+        position: relative;
+        aspect-ratio: 4 / 3;
+        background: linear-gradient(145deg, #e7e5e4, #d6d3d1);
+      }
+
+      .product-card__media img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+
+      .product-card__badge {
+        position: absolute;
+        top: 0.65rem;
+        left: 0.65rem;
+        font-size: 0.65rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #fff;
+        background: rgba(28, 25, 23, 0.72);
+        backdrop-filter: blur(6px);
+        padding: 0.25rem 0.5rem;
+        border-radius: 6px;
+        max-width: calc(100% - 1.3rem);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .product-card__body {
+        padding: 0.9rem 1rem 1.1rem;
+      }
+
+      .product-card__title {
+        margin: 0 0 0.35rem;
+        font-size: 0.9rem;
+        font-weight: 600;
+        line-height: 1.35;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        min-height: 2.4em;
+      }
+
+      .product-card__desc {
+        margin: 0 0 0.65rem;
+        font-size: 0.72rem;
+        line-height: 1.45;
+        color: var(--muted);
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+
+      .product-card__row {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 0.5rem;
+      }
+
+      .product-card__price {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: var(--accent);
+        letter-spacing: -0.02em;
+      }
+
+      .product-card__id {
+        font-size: 0.65rem;
+        color: #a8a29e;
+        font-variant-numeric: tabular-nums;
+      }
+
+      #status {
+        margin-top: 1.5rem;
+        padding: 0.75rem 1rem;
+        border-radius: 10px;
+        font-size: 0.85rem;
+        background: rgba(255, 255, 255, 0.65);
+        border: 1px solid rgba(28, 25, 23, 0.08);
+        color: var(--muted);
+      }
+
+      #status.is-error {
+        color: #b91c1c;
+        border-color: rgba(185, 28, 28, 0.25);
+        background: #fef2f2;
+      }
+
+      #status.is-ok {
+        color: #0f766e;
+        border-color: rgba(13, 148, 136, 0.25);
+        background: #f0fdfa;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header class="hero">
+        <span class="hero__eyebrow">Example</span>
+        <h1>shopify-drag-carousel</h1>
+        <p>
+          Products load from
+          <code>GET https://api.escuelajs.co/api/v1/products</code>
+          — drag the row or use arrows. The library loads from
+          <strong>unpkg</strong> (<code>shopify-drag-carousel@1</code>). For local
+          dev, use <code>examples/demo.html</code> in the repo instead.
+        </p>
+      </header>
+
+      <section class="section" aria-labelledby="sec-manual">
+        <div class="section__head">
+          <div>
+            <h2 class="section__title" id="sec-manual">Manual init + prev / next</h2>
+            <p class="section__hint">
+              <code>new DragCarousel('#strip-main', { buttons: { … } })</code>
+            </p>
+          </div>
+          <div class="toolbar">
+            <button type="button" id="btn-prev" aria-label="Previous products">←</button>
+            <button type="button" id="btn-next" aria-label="Next products">→</button>
+          </div>
+        </div>
+        <div class="scroller-wrap">
+          <div id="strip-main" class="scroller"></div>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="sec-auto">
+        <div class="section__head">
+          <div>
+            <h2 class="section__title" id="sec-auto">Auto-init</h2>
+            <p class="section__hint">
+              Class <code>.drag-carousel</code> — initialized on
+              <code>DOMContentLoaded</code>
+            </p>
+          </div>
+        </div>
+        <div class="scroller-wrap">
+          <div id="strip-auto" class="drag-carousel scroller"></div>
+        </div>
+      </section>
+
+      <p id="status" role="status"></p>
+    </div>
+
+    <script src="https://unpkg.com/shopify-drag-carousel@1/index.js"></script>
+    <script>
+      const API = "https://api.escuelajs.co/api/v1/products";
+
+      function truncate(s, n) {
+        const t = String(s || "");
+        return t.length <= n ? t : t.slice(0, n - 1) + "…";
+      }
+
+      function productCard(p) {
+        const el = document.createElement("article");
+        el.className = "product-card";
+
+        const media = document.createElement("div");
+        media.className = "product-card__media";
+
+        const img = document.createElement("img");
+        img.loading = "lazy";
+        const src =
+          Array.isArray(p.images) && p.images.length
+            ? p.images[0]
+            : "";
+        img.src =
+          src ||
+          "data:image/svg+xml," +
+            encodeURIComponent(
+              '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect fill="#d6d3d1" width="100%" height="100%"/></svg>'
+            );
+        const title = String(p.title || "");
+        img.alt = title;
+
+        const badge = document.createElement("span");
+        badge.className = "product-card__badge";
+        badge.textContent = p.category && p.category.name ? String(p.category.name) : "Product";
+
+        media.append(img, badge);
+
+        const body = document.createElement("div");
+        body.className = "product-card__body";
+
+        const h = document.createElement("h3");
+        h.className = "product-card__title";
+        h.textContent = title;
+
+        const desc = document.createElement("p");
+        desc.className = "product-card__desc";
+        desc.textContent = truncate(p.description || "", 120);
+
+        const row = document.createElement("div");
+        row.className = "product-card__row";
+
+        const price = document.createElement("span");
+        price.className = "product-card__price";
+        const n = Number(p.price);
+        price.textContent = Number.isFinite(n) ? "$" + n.toFixed(2) : "";
+
+        const id = document.createElement("span");
+        id.className = "product-card__id";
+        id.textContent = "#" + String(p.id != null ? p.id : "");
+
+        row.append(price, id);
+        body.append(h, desc, row);
+        el.append(media, body);
+        return el;
+      }
+
+      function fill(el, list) {
+        el.replaceChildren();
+        list.forEach((p) => el.appendChild(productCard(p)));
+      }
+
+      (async () => {
+        const status = document.getElementById("status");
+
+        if (typeof DragCarousel === "undefined") {
+          status.className = "is-error";
+          status.textContent =
+            "DragCarousel not found. Check that unpkg could load shopify-drag-carousel@1.";
+          return;
+        }
+
+        status.textContent = "Loading products…";
+
+        try {
+          const res = await fetch(API);
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          const all = await res.json();
+          if (!Array.isArray(all)) throw new Error("Unexpected JSON");
+
+          const a = all.slice(0, 12);
+          const b = all.slice(12, 24);
+
+          fill(document.getElementById("strip-main"), a);
+          fill(document.getElementById("strip-auto"), b);
+
+          void new DragCarousel("#strip-main", {
+            speed: 1.5,
+            buttons: { prev: "#btn-prev", next: "#btn-next" },
+          });
+
+          status.className = "is-ok";
+          status.textContent =
+            "Loaded " +
+            all.length +
+            " products (showing " +
+            a.length +
+            " + " +
+            b.length +
+            "). Demo loads the package from unpkg — no clone required.";
+        } catch (e) {
+          status.className = "is-error";
+          status.textContent =
+            "Could not load the API. Use http:// (e.g. npm run demo), not file://. " +
+            (e && e.message ? "(" + e.message + ")" : "");
+        }
+      })();
+    </script>
+  </body>
+</html>

@@ -18,6 +18,30 @@ A tiny, zero-dependency behavior layer for smooth mouse and touch drag scrolling
 npm install shopify-drag-carousel
 ```
 
+## Example (developer reference)
+
+The package ships two demos that load sample products from [`GET https://api.escuelajs.co/api/v1/products`](https://api.escuelajs.co/docs) and show **manual** + **auto-init** carousels. Card layout/CSS is demo-only; the library only adds scroll behavior.
+
+### View on CDN (no clone, no install)
+
+After the package is **published to npm**, open this URL in a browser:
+
+**https://unpkg.com/shopify-drag-carousel@1/examples/demo-cdn.html**
+
+That page loads `index.js` and `style.css` from **unpkg** (`shopify-drag-carousel@1`). Pin a version (e.g. `@1.0.0`) if you need a fixed release.
+
+### Run locally (repo or `npm install`)
+
+Serve the package root over **http** (not `file://`), then open **`examples/demo.html`** (relative paths to the library).
+
+```bash
+npm run demo
+```
+
+→ **http://localhost:5173/examples/demo.html** (root **`demo.html`** redirects there.)
+
+Or: `npm install shopify-drag-carousel`, then `npx serve node_modules/shopify-drag-carousel` and open **`/examples/demo.html`**.
+
 ## CDN (no build step)
 
 Script (global `DragCarousel` on `window`):
