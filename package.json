@@ -1,0 +1,34 @@
+{
+  "name": "shopify-drag-carousel",
+  "version": "1.0.0",
+  "description": "Lightweight drag-scroll for horizontal containers—one class, zero dependencies. Shopify & vanilla JS friendly.",
+  "main": "index.js",
+  "files": [
+    "index.js",
+    "style.css",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Sahilattar8786/shopify-drag-carousel.git"
+  },
+  "keywords": [
+    "shopify",
+    "carousel",
+    "drag-scroll",
+    "slider",
+    "horizontal-scroll",
+    "touch",
+    "vanilla-js"
+  ],
+  "author": "",
+  "license": "MIT",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Sahilattar8786/shopify-drag-carousel/issues"
+  },
+  "homepage": "https://github.com/Sahilattar8786/shopify-drag-carousel#readme"
+}

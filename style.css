@@ -1,0 +1,19 @@
+/**
+ * Optional stylesheet for shopify-drag-carousel.
+ * Behavior also injects minimal inline styles; import this for grabbing cursor while dragging.
+ */
+
+.drag-carousel {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drag-carousel {
+    scroll-behavior: auto;
+  }
+}
+
+.drag-carousel.dragging {
+  cursor: grabbing;
+  user-select: none;
+}
