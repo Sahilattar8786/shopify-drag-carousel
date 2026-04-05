@@ -1,21 +1,20 @@
-# Publish to npm when:
-# - A PR that changes package.json is merged into main (push to main with package.json in the diff)
-# - You publish a GitHub Release
-# - You run this workflow manually (Actions → Publish to npm → Run workflow)
+# Publishes to npm when package.json "version" is not already on the registry.
 #
-# Setup: Repository → Settings → Secrets and variables → Actions → New repository secret
-#        Name: NPM_TOKEN  Value: npm automation token (classic or granular with publish)
+# Triggers: push to main/master, release published, workflow_dispatch
+# Secret: NPM_TOKEN
 
 name: Publish to npm
 
 on:
   push:
-    branches: [main]
-    paths:
-      - "package.json"
+    branches: [main, master]
   release:
     types: [published]
   workflow_dispatch:
+
+concurrency:
+  group: npm-publish-${{ github.repository }}
+  cancel-in-progress: false
 
 jobs:
   publish:
@@ -33,11 +32,13 @@ jobs:
           node-version: "20"
           registry-url: "https://registry.npmjs.org"
 
-      - name: Read package version
+      - name: Read package name and version
         id: meta
         run: |
-          echo "version=$(node -p \"require('./package.json').version\")" >> "$GITHUB_OUTPUT"
-          echo "name=$(node -p \"require('./package.json').name\")" >> "$GITHUB_OUTPUT"
+          VERSION=$(node --print "require('./package.json').version")
+          NAME=$(node --print "require('./package.json').name")
+          echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
+          echo "name=${NAME}" >> "${GITHUB_OUTPUT}"
 
       - name: Skip if this version is already on npm
         id: skip
@@ -46,10 +47,20 @@ jobs:
           VER="${{ steps.meta.outputs.version }}"
           if npm view "${PKG}@${VER}" version >/dev/null 2>&1; then
             echo "Version ${VER} is already published — skipping."
-            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "skip=true" >> "${GITHUB_OUTPUT}"
           else
             echo "Version ${VER} not on registry — will publish."
-            echo "skip=false" >> "$GITHUB_OUTPUT"
+            echo "skip=false" >> "${GITHUB_OUTPUT}"
+          fi
+
+      - name: Check NPM_TOKEN for publish
+        if: steps.skip.outputs.skip != 'true'
+        env:
+          TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -z "${TOKEN}" ]; then
+            echo "::error::Secret NPM_TOKEN is missing. Add it under Settings → Secrets and variables → Actions."
+            exit 1
           fi
 
       - name: Publish to npm
