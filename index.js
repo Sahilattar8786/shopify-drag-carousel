@@ -1,5 +1,5 @@
 /**
- * shopify-drag-carousel — lightweight drag-scroll behavior for horizontal containers.
+ * drag-scroll-carousel — lightweight drag-scroll behavior for horizontal containers.
  * Zero dependencies. Works in Liquid, vanilla JS, or any stack without a bundler.
  */
 
@@ -40,6 +40,14 @@ class DragCarousel {
     this._boundTouchMove = null;
     /** @private */
     this._boundTouchEnd = null;
+    /** @private */
+    this._prevButtonEl = null;
+    /** @private */
+    this._nextButtonEl = null;
+    /** @private */
+    this._onPrevClick = null;
+    /** @private */
+    this._onNextClick = null;
 
     if (!this.element || initialized.has(this.element)) {
       return;
@@ -171,21 +179,56 @@ class DragCarousel {
     const behavior = DragCarousel.scrollBehaviorOption();
 
     if (cfg.prev) {
-      const prevEl = document.querySelector(cfg.prev);
-      if (prevEl) {
-        prevEl.addEventListener('click', () => {
+      this._prevButtonEl = document.querySelector(cfg.prev);
+      if (this._prevButtonEl) {
+        this._onPrevClick = () => {
           el.scrollBy({ left: -step(), behavior });
-        });
+        };
+        this._prevButtonEl.addEventListener('click', this._onPrevClick);
       }
     }
     if (cfg.next) {
-      const nextEl = document.querySelector(cfg.next);
-      if (nextEl) {
-        nextEl.addEventListener('click', () => {
+      this._nextButtonEl = document.querySelector(cfg.next);
+      if (this._nextButtonEl) {
+        this._onNextClick = () => {
           el.scrollBy({ left: step(), behavior });
-        });
+        };
+        this._nextButtonEl.addEventListener('click', this._onNextClick);
       }
     }
+  }
+
+  /**
+   * Remove listeners and mark this element as uninitialized.
+   * Useful in frameworks (e.g. React) when components unmount.
+   */
+  destroy() {
+    if (!this.element) return;
+
+    this.stopMouse();
+    this.stopTouch();
+
+    if (this._onMouseDown) {
+      this.element.removeEventListener('mousedown', this._onMouseDown);
+      this._onMouseDown = null;
+    }
+    if (this._onTouchStart) {
+      this.element.removeEventListener('touchstart', this._onTouchStart);
+      this._onTouchStart = null;
+    }
+
+    if (this._prevButtonEl && this._onPrevClick) {
+      this._prevButtonEl.removeEventListener('click', this._onPrevClick);
+    }
+    if (this._nextButtonEl && this._onNextClick) {
+      this._nextButtonEl.removeEventListener('click', this._onNextClick);
+    }
+    this._prevButtonEl = null;
+    this._nextButtonEl = null;
+    this._onPrevClick = null;
+    this._onNextClick = null;
+
+    initialized.delete(this.element);
   }
 
   /**
@@ -225,6 +268,7 @@ if (typeof document !== 'undefined') {
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = DragCarousel;
+  module.exports.default = DragCarousel;
 }
 if (typeof window !== 'undefined') {
   window.DragCarousel = DragCarousel;
