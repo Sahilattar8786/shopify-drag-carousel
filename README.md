@@ -81,6 +81,7 @@ The package includes HTML examples under **`examples/`**:
 | Demo | What it is |
 | ---- | ----------- |
 | **[examples/demo-cdn.html](https://unpkg.com/drag-scroll-carousel@1/examples/demo-cdn.html)** | Full page on **unpkg** — loads the library from the CDN, fetches sample products from [api.escuelajs.co](https://api.escuelajs.co/docs), drag + prev/next. Requires the version to exist on [npm](https://www.npmjs.com/package/drag-scroll-carousel). |
+| **[examples/demo-react-cdn.html](https://unpkg.com/drag-scroll-carousel@1/examples/demo-react-cdn.html)** | React 18 via CDN + Babel, with `useEffect` + `useRef` + `destroy()` cleanup using `DragCarousel`. |
 | **`examples/demo.html`** | Same UI with **relative** script paths — run a static server from the repo root (see below). |
 
 **Run the local demo** (clone or `npm install drag-scroll-carousel`, then serve the **package root** over `http://`, not `file://`):
