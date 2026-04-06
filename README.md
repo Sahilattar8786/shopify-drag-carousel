@@ -1,4 +1,4 @@
-# shopify-drag-carousel
+# drag-scroll-carousel
 
 **Add drag-scroll to any horizontal container with one class.**
 
@@ -15,11 +15,11 @@ A tiny, zero-dependency behavior layer for smooth mouse and touch drag scrolling
 ## Install
 
 ```bash
-npm install shopify-drag-carousel
+npm install drag-scroll-carousel
 ```
 
 ```js
-const DragCarousel = require("shopify-drag-carousel");
+const DragCarousel = require("drag-scroll-carousel");
 ```
 
 ---
@@ -32,14 +32,14 @@ const DragCarousel = require("shopify-drag-carousel");
 ```html
 <link
   rel="stylesheet"
-  href="https://cdn.jsdelivr.net/npm/shopify-drag-carousel@1/style.css"
+  href="https://cdn.jsdelivr.net/npm/drag-scroll-carousel@1/style.css"
 />
 <div class="drag-carousel">
   <div>Slide A</div>
   <div>Slide B</div>
   <div>Slide C</div>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/shopify-drag-carousel@1/index.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/drag-scroll-carousel@1/index.js"></script>
 ```
 
 After load, `window.DragCarousel` is available. Auto-init runs on `DOMContentLoaded` for every `.drag-carousel`.
@@ -50,7 +50,7 @@ After load, `window.DragCarousel` is available. Auto-init runs on `DOMContentLoa
 <div id="strip"></div>
 <button type="button" id="prev" aria-label="Previous">←</button>
 <button type="button" id="next" aria-label="Next">→</button>
-<script src="https://cdn.jsdelivr.net/npm/shopify-drag-carousel@1/index.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/drag-scroll-carousel@1/index.js"></script>
 <script>
   new DragCarousel("#strip", {
     speed: 1.5,
@@ -69,8 +69,8 @@ Use a **major** tag (`@1`) or pin an exact version (`@1.0.0`) in production.
 
 | Asset | jsDelivr | unpkg |
 | ----- | -------- | ----- |
-| Script | [cdn.jsdelivr.net/npm/shopify-drag-carousel@1/index.js](https://cdn.jsdelivr.net/npm/shopify-drag-carousel@1/index.js) | [unpkg.com/shopify-drag-carousel@1/index.js](https://unpkg.com/shopify-drag-carousel@1/index.js) |
-| Styles (optional) | [cdn.jsdelivr.net/npm/shopify-drag-carousel@1/style.css](https://cdn.jsdelivr.net/npm/shopify-drag-carousel@1/style.css) | [unpkg.com/shopify-drag-carousel@1/style.css](https://unpkg.com/shopify-drag-carousel@1/style.css) |
+| Script | [cdn.jsdelivr.net/npm/drag-scroll-carousel@1/index.js](https://cdn.jsdelivr.net/npm/drag-scroll-carousel@1/index.js) | [unpkg.com/drag-scroll-carousel@1/index.js](https://unpkg.com/drag-scroll-carousel@1/index.js) |
+| Styles (optional) | [cdn.jsdelivr.net/npm/drag-scroll-carousel@1/style.css](https://cdn.jsdelivr.net/npm/drag-scroll-carousel@1/style.css) | [unpkg.com/drag-scroll-carousel@1/style.css](https://unpkg.com/drag-scroll-carousel@1/style.css) |
 
 ---
 
@@ -80,10 +80,10 @@ The package includes HTML examples under **`examples/`**:
 
 | Demo | What it is |
 | ---- | ----------- |
-| **[examples/demo-cdn.html](https://unpkg.com/shopify-drag-carousel@1/examples/demo-cdn.html)** | Full page on **unpkg** — loads the library from the CDN, fetches sample products from [api.escuelajs.co](https://api.escuelajs.co/docs), drag + prev/next. Requires the version to exist on [npm](https://www.npmjs.com/package/shopify-drag-carousel). |
+| **[examples/demo-cdn.html](https://unpkg.com/drag-scroll-carousel@1/examples/demo-cdn.html)** | Full page on **unpkg** — loads the library from the CDN, fetches sample products from [api.escuelajs.co](https://api.escuelajs.co/docs), drag + prev/next. Requires the version to exist on [npm](https://www.npmjs.com/package/drag-scroll-carousel). |
 | **`examples/demo.html`** | Same UI with **relative** script paths — run a static server from the repo root (see below). |
 
-**Run the local demo** (clone or `npm install shopify-drag-carousel`, then serve the **package root** over `http://`, not `file://`):
+**Run the local demo** (clone or `npm install drag-scroll-carousel`, then serve the **package root** over `http://`, not `file://`):
 
 ```bash
 npm run demo
@@ -113,6 +113,37 @@ DragCarousel.initAll();
 
 ---
 
+## React usage
+
+Use a `ref` and initialize in `useEffect` on the client. Call `destroy()` in cleanup.
+
+```jsx
+import { useEffect, useRef } from "react";
+import DragCarousel from "drag-scroll-carousel";
+import "drag-scroll-carousel/style.css"; // optional
+
+export default function ProductRow() {
+  const stripRef = useRef(null);
+
+  useEffect(() => {
+    if (!stripRef.current) return;
+
+    const carousel = new DragCarousel(stripRef.current, { speed: 1.5 });
+    return () => carousel.destroy();
+  }, []);
+
+  return (
+    <div ref={stripRef} className="my-horizontal-row">
+      {/* your cards */}
+    </div>
+  );
+}
+```
+
+For Next.js App Router, put this in a client component (`"use client"`).
+
+---
+
 ## API
 
 ### `new DragCarousel(selectorOrElement, options?)`
@@ -131,6 +162,10 @@ Initializes every `.drag-carousel` in the document that is not already initializ
 ### `DragCarousel.isInitialized(element)`
 
 Returns whether the element already has carousel behavior.
+
+### `instance.destroy()`
+
+Removes all listeners from the carousel instance and allows re-initializing the same element later.
 
 ---
 
