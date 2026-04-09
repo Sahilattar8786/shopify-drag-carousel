@@ -72,6 +72,14 @@
         color: #6b7280;
         font-size: 0.84rem;
       }
+      .status {
+        margin: 0 0 12px;
+        color: #374151;
+        font-size: 0.92rem;
+      }
+      .status.is-error {
+        color: #b91c1c;
+      }
     </style>
   </head>
   <body>
@@ -83,25 +91,61 @@
     <script src="https://cdn.jsdelivr.net/npm/drag-scroll-carousel@1/index.js"></script>
 
     <script type="text/babel">
-      const { useEffect, useRef } = React;
-
-      const items = Array.from({ length: 12 }, (_, i) => ({
-        id: i + 1,
-        title: "Product " + (i + 1),
-        image: "https://picsum.photos/seed/drag-carousel-" + (i + 1) + "/500/300",
-      }));
+      const { useEffect, useRef, useState } = React;
+      const API = "https://api.escuelajs.co/api/v1/products";
 
       function App() {
         const stripRef = useRef(null);
+        const carouselRef = useRef(null);
+        const [items, setItems] = useState([]);
+        const [status, setStatus] = useState("Loading products...");
 
         useEffect(() => {
-          if (!stripRef.current || typeof DragCarousel === "undefined") return;
-          const carousel = new DragCarousel(stripRef.current, {
+          let cancelled = false;
+
+          (async () => {
+            try {
+              const res = await fetch(API);
+              if (!res.ok) throw new Error("HTTP " + res.status);
+              const data = await res.json();
+              if (!Array.isArray(data)) throw new Error("Unexpected JSON");
+              if (cancelled) return;
+
+              const list = data.slice(0, 12);
+              setItems(list);
+              setStatus("Loaded " + list.length + " products.");
+            } catch (err) {
+              if (cancelled) return;
+              const msg = err && err.message ? err.message : "Unknown error";
+              setStatus("Could not load API data (" + msg + ").");
+            }
+          })();
+
+          return () => {
+            cancelled = true;
+          };
+        }, []);
+
+        useEffect(() => {
+          if (!stripRef.current || typeof DragCarousel === "undefined" || !items.length) return;
+
+          if (carouselRef.current) {
+            carouselRef.current.destroy();
+            carouselRef.current = null;
+          }
+
+          carouselRef.current = new DragCarousel(stripRef.current, {
             speed: 1.5,
             buttons: { prev: "#prev-btn", next: "#next-btn" },
           });
-          return () => carousel.destroy();
-        }, []);
+
+          return () => {
+            if (carouselRef.current) {
+              carouselRef.current.destroy();
+              carouselRef.current = null;
+            }
+          };
+        }, [items]);
 
         return (
           <div className="page">
@@ -109,9 +153,13 @@
               <h1>React + drag-scroll-carousel (CDN demo)</h1>
               <p>
                 React renders cards. <code>DragCarousel</code> adds drag scroll +
-                prev/next behavior.
+                prev/next behavior. Data loads from <code>{API}</code>.
               </p>
             </header>
+
+            <p className={"status" + (status.startsWith("Could not") ? " is-error" : "")}>
+              {status}
+            </p>
 
             <div className="toolbar">
               <button id="prev-btn" aria-label="Previous">{"←"}</button>
@@ -124,7 +172,9 @@
                   <img className="card__img" src={item.image} alt={item.title} />
                   <div className="card__body">
                     <h3 className="card__title">{item.title}</h3>
-                    <p className="card__meta">ID #{item.id}</p>
+                    <p className="card__meta">
+                      ID #{item.id} - ${Number(item.price || 0).toFixed(2)}
+                    </p>
                   </div>
                 </article>
               ))}
