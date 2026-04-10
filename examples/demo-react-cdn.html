@@ -136,6 +136,9 @@
 
           carouselRef.current = new DragCarousel(stripRef.current, {
             speed: 1.5,
+            centerMode: true,
+            loop: true,
+            slideSelector: ".card",
             buttons: { prev: "#prev-btn", next: "#next-btn" },
           });
 
@@ -153,7 +156,7 @@
               <h1>React + drag-scroll-carousel (CDN demo)</h1>
               <p>
                 React renders cards. <code>DragCarousel</code> adds drag scroll +
-                prev/next behavior. Data loads from <code>{API}</code>.
+                prev/next behavior with center mode + loop. Data loads from <code>{API}</code>.
               </p>
             </header>
 

@@ -8,7 +8,14 @@ const initialized = new WeakSet();
 class DragCarousel {
   /**
    * @param {string | Element | null} selectorOrElement - CSS selector or DOM element
-   * @param {{ speed?: number, buttons?: { prev?: string, next?: string } | null }} [options]
+   * @param {{
+   *   speed?: number,
+   *   buttons?: { prev?: string, next?: string } | null,
+   *   centerMode?: boolean,
+   *   loop?: boolean,
+   *   slideSelector?: string | null,
+   *   minLoopSlides?: number
+   * }} [options]
    */
   constructor(selectorOrElement, options = {}) {
     this.element =
@@ -19,6 +26,10 @@ class DragCarousel {
     this.options = {
       speed: 1.5,
       buttons: null,
+      centerMode: false,
+      loop: false,
+      slideSelector: null,
+      minLoopSlides: 3,
       ...options,
     };
 
@@ -48,6 +59,14 @@ class DragCarousel {
     this._onPrevClick = null;
     /** @private */
     this._onNextClick = null;
+    /** @private */
+    this._onLoopScroll = null;
+    /** @private */
+    this._loopSpan = 0;
+    /** @private */
+    this._loopPrefix = 0;
+    /** @private */
+    this._isDestroying = false;
 
     if (!this.element || initialized.has(this.element)) {
       return;
@@ -62,9 +81,13 @@ class DragCarousel {
     }
     initialized.add(this.element);
     this.applyStyles();
+    this.setupLoop();
     this.bindEvents();
     if (this.options.buttons) {
       this.bindButtons();
+    }
+    if (this.options.centerMode) {
+      this.snapToClosest();
     }
   }
 
@@ -142,6 +165,9 @@ class DragCarousel {
     this._dragging = false;
     this.element.classList.remove('dragging');
     this.element.style.scrollBehavior = DragCarousel.scrollBehaviorOption();
+    if (this.options.centerMode && !this._isDestroying) {
+      this.snapToClosest();
+    }
   }
 
   stopMouse() {
@@ -182,6 +208,10 @@ class DragCarousel {
       this._prevButtonEl = document.querySelector(cfg.prev);
       if (this._prevButtonEl) {
         this._onPrevClick = () => {
+          if (this.options.centerMode) {
+            this.shiftSlide(-1, behavior);
+            return;
+          }
           el.scrollBy({ left: -step(), behavior });
         };
         this._prevButtonEl.addEventListener('click', this._onPrevClick);
@@ -191,10 +221,120 @@ class DragCarousel {
       this._nextButtonEl = document.querySelector(cfg.next);
       if (this._nextButtonEl) {
         this._onNextClick = () => {
+          if (this.options.centerMode) {
+            this.shiftSlide(1, behavior);
+            return;
+          }
           el.scrollBy({ left: step(), behavior });
         };
         this._nextButtonEl.addEventListener('click', this._onNextClick);
       }
+    }
+  }
+
+  getSlides(includeClones = false) {
+    if (!this.element) return [];
+    const all = this.options.slideSelector
+      ? Array.from(this.element.querySelectorAll(this.options.slideSelector))
+      : Array.from(this.element.children);
+    if (includeClones) return all;
+    return all.filter((node) => node.dataset.dragCarouselClone !== '1');
+  }
+
+  static outerWidth(el) {
+    const rect = el.getBoundingClientRect();
+    const style = window.getComputedStyle(el);
+    const marginLeft = Number.parseFloat(style.marginLeft) || 0;
+    const marginRight = Number.parseFloat(style.marginRight) || 0;
+    return rect.width + marginLeft + marginRight;
+  }
+
+  setupLoop() {
+    if (!this.options.loop || !this.element || typeof window === 'undefined') return;
+    const originals = this.getSlides(false);
+    if (!originals.length) return;
+
+    const minSlides = Math.max(1, Number(this.options.minLoopSlides) || 1);
+    const seed = [...originals];
+    const expanded = [...seed];
+    while (expanded.length < minSlides) {
+      expanded.push(...seed);
+    }
+
+    const buildClone = (node) => {
+      const clone = node.cloneNode(true);
+      clone.dataset.dragCarouselClone = '1';
+      clone.setAttribute('aria-hidden', 'true');
+      return clone;
+    };
+
+    const prependClones = expanded.map(buildClone);
+    const appendClones = expanded.map(buildClone);
+
+    for (let i = prependClones.length - 1; i >= 0; i -= 1) {
+      this.element.insertBefore(prependClones[i], this.element.firstChild);
+    }
+    appendClones.forEach((clone) => this.element.appendChild(clone));
+
+    this._loopPrefix = prependClones.reduce((sum, node) => sum + DragCarousel.outerWidth(node), 0);
+    this._loopSpan = this.getSlides(false).reduce((sum, node) => sum + DragCarousel.outerWidth(node), 0);
+    this.element.scrollLeft += this._loopPrefix;
+
+    this._onLoopScroll = () => {
+      const left = this.element.scrollLeft;
+      const start = this._loopPrefix;
+      const end = this._loopPrefix + this._loopSpan;
+      if (left < start - 1) {
+        this.element.scrollLeft = left + this._loopSpan;
+      } else if (left > end + 1) {
+        this.element.scrollLeft = left - this._loopSpan;
+      }
+    };
+    this.element.addEventListener('scroll', this._onLoopScroll, { passive: true });
+  }
+
+  getClosestSlideIndex(slides) {
+    if (!slides.length) return -1;
+    const center = this.element.scrollLeft + this.element.clientWidth / 2;
+    let bestIdx = 0;
+    let bestDist = Number.POSITIVE_INFINITY;
+    slides.forEach((slide, idx) => {
+      const slideCenter = slide.offsetLeft + slide.offsetWidth / 2;
+      const dist = Math.abs(slideCenter - center);
+      if (dist < bestDist) {
+        bestDist = dist;
+        bestIdx = idx;
+      }
+    });
+    return bestIdx;
+  }
+
+  scrollSlideToCenter(slide, behavior = DragCarousel.scrollBehaviorOption()) {
+    if (!slide) return;
+    const left = slide.offsetLeft - (this.element.clientWidth - slide.offsetWidth) / 2;
+    this.element.scrollTo({ left, behavior });
+  }
+
+  shiftSlide(delta, behavior = DragCarousel.scrollBehaviorOption()) {
+    const slides = this.getSlides(false);
+    if (!slides.length) return;
+    const current = this.getClosestSlideIndex(slides);
+    if (current < 0) return;
+    let target = current + delta;
+    if (this.options.loop) {
+      const len = slides.length;
+      target = ((target % len) + len) % len;
+    } else {
+      target = Math.max(0, Math.min(slides.length - 1, target));
+    }
+    this.scrollSlideToCenter(slides[target], behavior);
+  }
+
+  snapToClosest() {
+    const slides = this.getSlides(false);
+    const idx = this.getClosestSlideIndex(slides);
+    if (idx >= 0) {
+      this.scrollSlideToCenter(slides[idx], DragCarousel.scrollBehaviorOption());
     }
   }
 
@@ -204,6 +344,7 @@ class DragCarousel {
    */
   destroy() {
     if (!this.element) return;
+    this._isDestroying = true;
 
     this.stopMouse();
     this.stopTouch();
@@ -223,10 +364,21 @@ class DragCarousel {
     if (this._nextButtonEl && this._onNextClick) {
       this._nextButtonEl.removeEventListener('click', this._onNextClick);
     }
+    if (this._onLoopScroll) {
+      this.element.removeEventListener('scroll', this._onLoopScroll);
+      this._onLoopScroll = null;
+    }
+    this.getSlides(true)
+      .filter((node) => node.dataset.dragCarouselClone === '1')
+      .forEach((node) => node.remove());
+
     this._prevButtonEl = null;
     this._nextButtonEl = null;
     this._onPrevClick = null;
     this._onNextClick = null;
+    this._loopPrefix = 0;
+    this._loopSpan = 0;
+    this._isDestroying = false;
 
     initialized.delete(this.element);
   }

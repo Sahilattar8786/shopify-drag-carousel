@@ -10,6 +10,8 @@ A tiny, zero-dependency behavior layer for smooth mouse and touch drag scrolling
 - **Mouse + touch** — Desktop drag and mobile touch drag using native `scrollLeft`
 - **Configurable speed** — Default multiplier `1.5`
 - **Optional prev/next** — Wire buttons with CSS selectors; each click scrolls by one viewport width with smooth behavior
+- **Center mode (optional)** — Buttons/drag can snap to the nearest slide center
+- **Loop mode (optional)** — Seamless looping using cloned slides; works even with small sets (for example `< 3` slides)
 - **Minimal inline styles** — `overflow-x: auto`, `cursor: grab`, `scroll-behavior: smooth` (plus optional `style.css` for `grabbing`)
 
 ## Install
@@ -54,6 +56,8 @@ After load, `window.DragCarousel` is available. Auto-init runs on `DOMContentLoa
 <script>
   new DragCarousel("#strip", {
     speed: 1.5,
+    centerMode: true,
+    loop: true,
     buttons: { prev: "#prev", next: "#next" },
   });
 </script>
@@ -153,6 +157,10 @@ For Next.js App Router, put this in a client component (`"use client"`).
 | ------ | ---- | ------- | ----------- |
 | `speed` | `number` | `1.5` | Multiplier for pointer movement vs. scroll |
 | `buttons` | `object` | `null` | `{ prev: string, next: string }` — any valid `querySelector` string |
+| `centerMode` | `boolean` | `false` | Snaps to the nearest slide and centers it after drag/end; buttons move by slide |
+| `loop` | `boolean` | `false` | Enables infinite looping by cloning slides before/after the original set |
+| `slideSelector` | `string \| null` | `null` | Selector used to identify slides; defaults to direct children of the container |
+| `minLoopSlides` | `number` | `3` | Minimum visual slide count for loop cloning (helps when your source has very few slides) |
 
 Selectors resolve with `document.querySelector` (first match).
 

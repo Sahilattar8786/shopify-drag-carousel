@@ -289,9 +289,9 @@
       <section class="section" aria-labelledby="sec-manual">
         <div class="section__head">
           <div>
-            <h2 class="section__title" id="sec-manual">Manual init + prev / next</h2>
+            <h2 class="section__title" id="sec-manual">Manual init + prev/next + center + loop</h2>
             <p class="section__hint">
-              <code>new DragCarousel('#strip-main', { buttons: { … } })</code>
+              <code>new DragCarousel('#strip-main', { centerMode: true, loop: true, buttons: { … } })</code>
             </p>
           </div>
           <div class="toolbar">
@@ -418,6 +418,9 @@
 
           void new DragCarousel("#strip-main", {
             speed: 1.5,
+            centerMode: true,
+            loop: true,
+            slideSelector: ".product-card",
             buttons: { prev: "#btn-prev", next: "#btn-next" },
           });
 
