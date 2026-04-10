@@ -1,14 +1,16 @@
 {
   "name": "drag-scroll-carousel",
-  "version": "1.0.5",
+  "version": "1.0.8",
   "description": "Lightweight drag-scroll for horizontal containers with optional buttons. One class, zero dependencies, framework-agnostic.",
   "main": "index.js",
   "files": [
+    "index.html",
     "index.js",
     "style.css",
     "README.md",
     "examples/demo.html",
-    "examples/demo-cdn.html"
+    "examples/demo-cdn.html",
+    "examples/demo-react-cdn.html"
   ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -45,5 +47,5 @@
   "bugs": {
     "url": "https://github.com/Sahilattar8786/drag-scroll-carousel/issues"
   },
-  "homepage": "https://github.com/Sahilattar8786/drag-scroll-carousel#readme"
+  "homepage": "https://unpkg.com/drag-scroll-carousel@1/index.html"
 }

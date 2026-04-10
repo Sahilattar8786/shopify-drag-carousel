@@ -3,11 +3,11 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>shopify-drag-carousel — example (CDN)</title>
-    <!-- Library from unpkg — no clone or npm install required to try the demo -->
+    <title>drag-scroll-carousel — example (CDN)</title>
+    <!-- Library from jsDelivr — no clone or npm install required to try the demo -->
     <link
       rel="stylesheet"
-      href="https://unpkg.com/shopify-drag-carousel@1/style.css"
+      href="https://cdn.jsdelivr.net/npm/drag-scroll-carousel@1/style.css"
     />
     <style>
       :root {
@@ -280,12 +280,12 @@
     <div class="page">
       <header class="hero">
         <span class="hero__eyebrow">Example</span>
-        <h1>shopify-drag-carousel</h1>
+        <h1>drag-scroll-carousel</h1>
         <p>
           Products load from
           <code>GET https://api.escuelajs.co/api/v1/products</code>
           — drag the row or use arrows. The library loads from
-          <strong>unpkg</strong> (<code>shopify-drag-carousel@1</code>). For local
+          <strong>jsDelivr</strong> (<code>drag-scroll-carousel@1</code>). For local
           dev, use <code>examples/demo.html</code> in the repo instead.
         </p>
       </header>
@@ -293,9 +293,9 @@
       <section class="section" aria-labelledby="sec-manual">
         <div class="section__head">
           <div>
-            <h2 class="section__title" id="sec-manual">Manual init + prev / next</h2>
+            <h2 class="section__title" id="sec-manual">Manual init + prev/next + center + loop</h2>
             <p class="section__hint">
-              <code>new DragCarousel('#strip-main', { buttons: { … } })</code>
+              <code>new DragCarousel('#strip-main', { centerMode: true, loop: true, buttons: { … } })</code>
             </p>
           </div>
           <div class="toolbar">
@@ -326,7 +326,7 @@
       <p id="status" role="status"></p>
     </div>
 
-    <script src="https://unpkg.com/shopify-drag-carousel@1/index.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/drag-scroll-carousel@1/index.js"></script>
     <script>
       const API = "https://api.escuelajs.co/api/v1/products";
 
@@ -403,7 +403,7 @@
         if (typeof DragCarousel === "undefined") {
           status.className = "is-error";
           status.textContent =
-            "DragCarousel not found. Check that unpkg could load shopify-drag-carousel@1.";
+            "DragCarousel not found. Check that jsDelivr could load drag-scroll-carousel@1.";
           return;
         }
 
@@ -423,6 +423,9 @@
 
           void new DragCarousel("#strip-main", {
             speed: 1.5,
+            centerMode: true,
+            loop: true,
+            slideSelector: ".product-card",
             buttons: { prev: "#btn-prev", next: "#btn-next" },
           });
 
@@ -434,7 +437,7 @@
             a.length +
             " + " +
             b.length +
-            "). Demo loads the package from unpkg — no clone required.";
+            "). Demo loads the package from jsDelivr — no clone required.";
         } catch (e) {
           status.className = "is-error";
           status.textContent =
