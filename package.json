@@ -4,6 +4,7 @@
   "description": "Lightweight drag-scroll for horizontal containers with optional buttons. One class, zero dependencies, framework-agnostic.",
   "main": "index.js",
   "files": [
+    "index.html",
     "index.js",
     "style.css",
     "README.md",
@@ -46,5 +47,5 @@
   "bugs": {
     "url": "https://github.com/Sahilattar8786/drag-scroll-carousel/issues"
   },
-  "homepage": "https://github.com/Sahilattar8786/drag-scroll-carousel#readme"
+  "homepage": "https://unpkg.com/drag-scroll-carousel@1/index.html"
 }

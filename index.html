@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>drag-scroll-carousel — Lightweight drag-scroll carousel</title>
+    <meta name="description" content="Lightweight drag scrolling for horizontal containers. Zero dependencies, center mode, loop mode. Works in vanilla JS, React, Shopify, and more." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --bg: #050a18;
+        --surface: rgba(14, 22, 42, 0.75);
+        --surface-solid: #0e162a;
+        --text: #f0f4ff;
+        --muted: #8b9cc0;
+        --stroke: rgba(140, 165, 220, 0.15);
+        --stroke-bright: rgba(140, 165, 220, 0.28);
+        --violet: #7c3aed;
+        --sky: #0ea5e9;
+        --cyan: #22d3ee;
+        --pink: #ec4899;
+        --radius: 16px;
+      }
+
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+      html { scroll-behavior: smooth; }
+
+      body {
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        color: var(--text);
+        background: var(--bg);
+        overflow-x: hidden;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* ── Animated background ── */
+      .bg-glow {
+        position: fixed; inset: 0; z-index: 0; pointer-events: none;
+        overflow: hidden;
+      }
+      .bg-glow .orb {
+        position: absolute; border-radius: 50%; filter: blur(100px); opacity: 0.35;
+        animation: float 18s ease-in-out infinite alternate;
+      }
+      .bg-glow .orb-1 {
+        width: 700px; height: 700px; top: -15%; left: -8%;
+        background: var(--violet);
+      }
+      .bg-glow .orb-2 {
+        width: 600px; height: 600px; top: 10%; right: -12%;
+        background: var(--sky);
+        animation-delay: -6s; animation-duration: 22s;
+      }
+      .bg-glow .orb-3 {
+        width: 500px; height: 500px; bottom: -10%; left: 30%;
+        background: var(--pink);
+        animation-delay: -10s; animation-duration: 25s; opacity: 0.18;
+      }
+      @keyframes float {
+        0%   { transform: translate(0, 0) scale(1); }
+        50%  { transform: translate(40px, -30px) scale(1.08); }
+        100% { transform: translate(-20px, 20px) scale(0.95); }
+      }
+
+      /* ── Layout ── */
+      .page { position: relative; z-index: 1; }
+
+      .wrap {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 0 20px;
+      }
+
+      /* ── Top bar ── */
+      .topbar {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 18px 0;
+        border-bottom: 1px solid var(--stroke);
+      }
+      .brand {
+        font-weight: 700; font-size: 1rem; letter-spacing: -0.01em;
+        display: flex; align-items: center; gap: 8px;
+      }
+      .brand-icon {
+        width: 28px; height: 28px; border-radius: 8px;
+        background: linear-gradient(135deg, var(--violet), var(--sky));
+        display: grid; place-items: center; font-size: 14px; font-weight: 800;
+        color: #fff;
+      }
+      .topbar-links {
+        display: flex; gap: 6px; align-items: center;
+      }
+      .topbar-links a {
+        color: var(--muted); font-size: 0.85rem; font-weight: 500;
+        text-decoration: none; padding: 6px 12px; border-radius: 8px;
+        transition: color 0.2s, background 0.2s;
+      }
+      .topbar-links a:hover {
+        color: var(--text); background: rgba(255,255,255,0.06);
+      }
+      .badge {
+        font-size: 0.72rem; font-weight: 600;
+        background: rgba(124, 58, 237, 0.2);
+        border: 1px solid rgba(124, 58, 237, 0.35);
+        color: #c4b5fd; border-radius: 999px;
+        padding: 4px 10px;
+      }
+
+      /* ── Hero ── */
+      .hero {
+        padding: 72px 0 48px;
+        text-align: center;
+      }
+      .hero-badge {
+        display: inline-flex; align-items: center; gap: 6px;
+        font-size: 0.82rem; font-weight: 500; color: var(--cyan);
+        background: rgba(34, 211, 238, 0.08);
+        border: 1px solid rgba(34, 211, 238, 0.2);
+        border-radius: 999px; padding: 6px 16px;
+        margin-bottom: 22px;
+        animation: fadeUp 0.6s ease-out both;
+      }
+      .hero-badge svg { width: 14px; height: 14px; }
+
+      h1 {
+        font-size: clamp(2.4rem, 6vw, 4.2rem);
+        font-weight: 800; line-height: 1.08;
+        letter-spacing: -0.03em;
+        animation: fadeUp 0.6s 0.1s ease-out both;
+      }
+      h1 .grad {
+        background: linear-gradient(90deg, var(--violet), var(--sky), var(--cyan));
+        -webkit-background-clip: text; background-clip: text;
+        color: transparent;
+      }
+      .hero-sub {
+        max-width: 620px; margin: 18px auto 0;
+        color: var(--muted); font-size: 1.12rem; line-height: 1.7;
+        animation: fadeUp 0.6s 0.2s ease-out both;
+      }
+
+      .hero-actions {
+        display: flex; gap: 12px; justify-content: center;
+        flex-wrap: wrap; margin-top: 28px;
+        animation: fadeUp 0.6s 0.3s ease-out both;
+      }
+      .btn-primary {
+        display: inline-flex; align-items: center; gap: 6px;
+        font-family: inherit; font-size: 0.95rem; font-weight: 600;
+        color: #fff; padding: 12px 22px; border-radius: 12px; border: none;
+        background: linear-gradient(135deg, var(--violet), var(--sky));
+        cursor: pointer; text-decoration: none;
+        transition: transform 0.2s, box-shadow 0.2s;
+        box-shadow: 0 0 24px rgba(124, 58, 237, 0.3);
+      }
+      .btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 0 36px rgba(124, 58, 237, 0.45);
+      }
+      .btn-secondary {
+        display: inline-flex; align-items: center; gap: 6px;
+        font-family: inherit; font-size: 0.95rem; font-weight: 500;
+        color: var(--text); padding: 12px 22px; border-radius: 12px;
+        border: 1px solid var(--stroke-bright);
+        background: rgba(255,255,255,0.04);
+        cursor: pointer; text-decoration: none;
+        transition: background 0.2s, border-color 0.2s;
+      }
+      .btn-secondary:hover {
+        background: rgba(255,255,255,0.08);
+        border-color: rgba(140, 165, 220, 0.4);
+      }
+
+      /* ── Install snippet ── */
+      .install-bar {
+        display: inline-flex; align-items: center; gap: 10px;
+        background: var(--surface);
+        border: 1px solid var(--stroke);
+        border-radius: 12px; padding: 10px 16px;
+        margin-top: 22px; font-family: 'JetBrains Mono', monospace;
+        font-size: 0.88rem; color: var(--muted);
+        animation: fadeUp 0.6s 0.35s ease-out both;
+        cursor: pointer; transition: border-color 0.2s;
+      }
+      .install-bar:hover { border-color: var(--stroke-bright); }
+      .install-bar code { color: var(--cyan); }
+      .install-bar .copy-icon { color: var(--muted); flex-shrink: 0; transition: color 0.2s; }
+      .install-bar:hover .copy-icon { color: var(--text); }
+
+      /* ── Code preview ── */
+      .code-section {
+        margin-top: 56px;
+        animation: fadeUp 0.6s 0.4s ease-out both;
+      }
+      .terminal {
+        border: 1px solid var(--stroke-bright);
+        border-radius: var(--radius);
+        overflow: hidden;
+        background: rgba(8, 12, 28, 0.9);
+        box-shadow: 0 8px 40px rgba(0,0,0,0.35);
+        max-width: 680px; margin: 0 auto;
+      }
+      .terminal-bar {
+        display: flex; align-items: center; gap: 7px;
+        padding: 12px 16px;
+        background: rgba(14, 22, 42, 0.7);
+        border-bottom: 1px solid var(--stroke);
+      }
+      .terminal-dot {
+        width: 10px; height: 10px; border-radius: 50%;
+      }
+      .terminal-dot:nth-child(1) { background: #fb7185; }
+      .terminal-dot:nth-child(2) { background: #fbbf24; }
+      .terminal-dot:nth-child(3) { background: #34d399; }
+      .terminal-title {
+        flex: 1; text-align: center; font-size: 0.75rem;
+        color: var(--muted); font-weight: 500;
+      }
+      .terminal pre {
+        margin: 0; padding: 20px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.84rem; line-height: 1.65;
+        color: #cbd5e1; overflow-x: auto;
+      }
+      .terminal pre .kw  { color: #c084fc; }
+      .terminal pre .fn  { color: #67e8f9; }
+      .terminal pre .str { color: #86efac; }
+      .terminal pre .cm  { color: #64748b; }
+      .terminal pre .op  { color: #94a3b8; }
+
+      /* ── Live demo ── */
+      .demo-section {
+        margin-top: 72px;
+        animation: fadeUp 0.6s 0.45s ease-out both;
+      }
+      .section-label {
+        text-align: center; font-size: 0.82rem; font-weight: 600;
+        text-transform: uppercase; letter-spacing: 0.08em;
+        color: var(--violet); margin-bottom: 8px;
+      }
+      .section-title {
+        text-align: center; font-size: clamp(1.4rem, 3vw, 2rem);
+        font-weight: 700; letter-spacing: -0.02em; margin-bottom: 28px;
+      }
+      .demo-container {
+        border: 1px solid var(--stroke-bright);
+        border-radius: var(--radius);
+        background: var(--surface);
+        padding: 24px 0 24px;
+        overflow: hidden; position: relative;
+      }
+      .demo-nav {
+        display: flex; justify-content: center; gap: 10px;
+        margin-bottom: 18px;
+      }
+      .demo-btn {
+        width: 38px; height: 38px; border-radius: 10px;
+        border: 1px solid var(--stroke-bright);
+        background: rgba(255,255,255,0.04);
+        color: var(--text); font-size: 1.1rem;
+        cursor: pointer; display: grid; place-items: center;
+        transition: background 0.2s, border-color 0.2s;
+      }
+      .demo-btn:hover {
+        background: rgba(255,255,255,0.1);
+        border-color: var(--violet);
+      }
+      .demo-strip {
+        display: flex; gap: 16px;
+        overflow-x: auto; scroll-snap-type: x mandatory;
+        padding: 4px 24px 12px;
+        cursor: grab;
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+      .demo-strip::-webkit-scrollbar { display: none; }
+      .demo-strip.dragging { cursor: grabbing; }
+      .demo-card {
+        flex: 0 0 220px; scroll-snap-align: center;
+        border-radius: 14px; overflow: hidden;
+        border: 1px solid var(--stroke);
+        background: var(--surface-solid);
+        transition: transform 0.2s, box-shadow 0.2s;
+      }
+      .demo-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+      }
+      .demo-card-img {
+        width: 100%; height: 140px;
+        object-fit: cover; display: block;
+        background: linear-gradient(135deg, #1e293b, #0f172a);
+      }
+      .demo-card-body { padding: 12px 14px; }
+      .demo-card-body h4 {
+        font-size: 0.88rem; font-weight: 600;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      }
+      .demo-card-body .price {
+        font-size: 0.82rem; color: var(--cyan); font-weight: 600; margin-top: 4px;
+      }
+      .demo-card-body .cat {
+        font-size: 0.75rem; color: var(--muted); margin-top: 2px;
+      }
+
+      /* ── Features ── */
+      .features {
+        margin-top: 72px;
+      }
+      .feature-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+      }
+      .feature-card {
+        border: 1px solid var(--stroke);
+        border-radius: var(--radius);
+        padding: 22px 18px;
+        background: var(--surface);
+        transition: border-color 0.3s, transform 0.2s;
+      }
+      .feature-card:hover {
+        border-color: var(--stroke-bright);
+        transform: translateY(-2px);
+      }
+      .feature-icon {
+        width: 40px; height: 40px; border-radius: 10px;
+        display: grid; place-items: center;
+        font-size: 1.2rem; margin-bottom: 12px;
+      }
+      .fi-drag   { background: rgba(124, 58, 237, 0.15); color: #a78bfa; }
+      .fi-center { background: rgba(14, 165, 233, 0.15); color: #38bdf8; }
+      .fi-loop   { background: rgba(34, 211, 238, 0.15); color: #22d3ee; }
+      .fi-touch  { background: rgba(236, 72, 153, 0.15); color: #f472b6; }
+      .fi-light  { background: rgba(250, 204, 21, 0.15); color: #facc15; }
+      .fi-frame  { background: rgba(52, 211, 153, 0.15); color: #34d399; }
+      .feature-card h3 {
+        font-size: 1rem; font-weight: 600; margin-bottom: 6px;
+      }
+      .feature-card p {
+        color: var(--muted); font-size: 0.88rem; line-height: 1.55;
+      }
+
+      /* ── API table ── */
+      .api-section { margin-top: 72px; }
+      .api-table-wrap {
+        border: 1px solid var(--stroke);
+        border-radius: var(--radius);
+        overflow: hidden;
+      }
+      table {
+        width: 100%; border-collapse: collapse;
+        font-size: 0.88rem;
+      }
+      th {
+        text-align: left; padding: 12px 16px;
+        background: var(--surface-solid);
+        color: var(--muted); font-weight: 600; font-size: 0.78rem;
+        text-transform: uppercase; letter-spacing: 0.06em;
+        border-bottom: 1px solid var(--stroke);
+      }
+      td {
+        padding: 11px 16px;
+        border-bottom: 1px solid var(--stroke);
+      }
+      td:first-child {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.82rem; color: var(--cyan);
+      }
+      tr:last-child td { border-bottom: none; }
+      .type-col {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.8rem; color: #c084fc;
+      }
+      .default-col {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.8rem; color: #94a3b8;
+      }
+
+      /* ── CTA banner ── */
+      .cta {
+        margin-top: 72px;
+        border: 1px solid var(--stroke-bright);
+        border-radius: var(--radius);
+        background:
+          radial-gradient(600px 300px at 20% 50%, rgba(124, 58, 237, 0.12), transparent),
+          radial-gradient(500px 300px at 80% 50%, rgba(14, 165, 233, 0.10), transparent),
+          var(--surface);
+        padding: 44px 28px;
+        text-align: center;
+        position: relative; overflow: hidden;
+      }
+      .cta::before {
+        content: '';
+        position: absolute; top: 0; left: 0; right: 0; height: 1px;
+        background: linear-gradient(90deg, transparent, var(--violet), var(--sky), transparent);
+      }
+      .cta h2 {
+        font-size: clamp(1.5rem, 3vw, 2rem);
+        font-weight: 700; letter-spacing: -0.02em;
+      }
+      .cta p {
+        color: var(--muted); font-size: 1rem; margin-top: 8px; line-height: 1.6;
+      }
+      .cta-actions {
+        display: flex; gap: 12px; justify-content: center;
+        flex-wrap: wrap; margin-top: 22px;
+      }
+      .cta-code {
+        display: inline-flex; align-items: center; gap: 8px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.9rem; color: var(--muted);
+        background: rgba(2, 6, 23, 0.5);
+        border: 1px solid var(--stroke);
+        border-radius: 10px; padding: 10px 18px;
+        margin-top: 16px;
+      }
+      .cta-code code { color: var(--cyan); font-family: inherit; }
+
+      /* ── Frameworks strip ── */
+      .frameworks {
+        margin-top: 48px;
+        text-align: center;
+      }
+      .frameworks p {
+        font-size: 0.82rem; text-transform: uppercase;
+        letter-spacing: 0.08em; font-weight: 600;
+        color: var(--muted); margin-bottom: 14px;
+      }
+      .fw-logos {
+        display: flex; gap: 28px; justify-content: center;
+        flex-wrap: wrap; align-items: center;
+      }
+      .fw-item {
+        display: flex; align-items: center; gap: 8px;
+        color: var(--muted); font-size: 0.88rem; font-weight: 500;
+        padding: 8px 16px; border: 1px solid var(--stroke);
+        border-radius: 10px; background: rgba(255,255,255,0.02);
+        transition: border-color 0.2s, color 0.2s;
+      }
+      .fw-item:hover { border-color: var(--stroke-bright); color: var(--text); }
+      .fw-item svg { width: 18px; height: 18px; }
+
+      /* ── Footer ── */
+      footer {
+        margin-top: 56px; padding: 32px 0;
+        border-top: 1px solid var(--stroke);
+        text-align: center;
+        color: var(--muted); font-size: 0.85rem;
+      }
+      footer a {
+        color: var(--sky); text-decoration: none;
+      }
+      footer a:hover { text-decoration: underline; }
+      .footer-links {
+        display: flex; gap: 20px; justify-content: center;
+        flex-wrap: wrap; margin-bottom: 12px;
+      }
+      .footer-copy {
+        font-size: 0.78rem; color: #5a6a8a;
+      }
+
+      /* ── Animations ── */
+      @keyframes fadeUp {
+        from { opacity: 0; transform: translateY(16px); }
+        to   { opacity: 1; transform: translateY(0); }
+      }
+
+      /* ── Responsive ── */
+      @media (max-width: 768px) {
+        .hero { padding: 48px 0 32px; }
+        .feature-grid { grid-template-columns: 1fr; }
+        .topbar-links a:not(:last-child) { display: none; }
+        .demo-card { flex: 0 0 180px; }
+        .api-table-wrap { overflow-x: auto; }
+        table { min-width: 580px; }
+      }
+    </style>
+  </head>
+  <body>
+
+    <div class="bg-glow">
+      <div class="orb orb-1"></div>
+      <div class="orb orb-2"></div>
+      <div class="orb orb-3"></div>
+    </div>
+
+    <div class="page">
+      <header class="wrap">
+        <nav class="topbar">
+          <div class="brand">
+            <span class="brand-icon">D</span>
+            drag-scroll-carousel
+          </div>
+          <div class="topbar-links">
+            <a href="#demo">Demo</a>
+            <a href="#features">Features</a>
+            <a href="#api">API</a>
+            <a href="https://github.com/Sahilattar8786/drag-scroll-carousel">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .3a12 12 0 00-3.8 23.38c.6.12.82-.26.82-.58v-2.02c-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.08-.74.08-.73.08-.73 1.2.09 1.84 1.24 1.84 1.24 1.07 1.83 2.8 1.3 3.49 1 .1-.78.42-1.3.76-1.6-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.39 1.24-3.22-.13-.3-.54-1.52.12-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 016.02 0c2.28-1.55 3.29-1.23 3.29-1.23.66 1.66.25 2.88.12 3.18a4.65 4.65 0 011.24 3.22c0 4.61-2.8 5.63-5.48 5.92.43.37.81 1.1.81 2.22v3.29c0 .32.22.7.82.58A12 12 0 0012 .3"/></svg>
+            </a>
+          </div>
+        </nav>
+      </header>
+
+      <!-- Hero -->
+      <section class="hero wrap">
+        <div class="hero-badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          Zero dependencies &middot; ~3 KB
+        </div>
+        <h1>Drag scrolling that<br>feels <span class="grad">buttery smooth</span></h1>
+        <p class="hero-sub">
+          Add drag-to-scroll, center snapping, and infinite loop to any horizontal container.
+          Keep your own markup and styles &mdash; just enhance scrolling.
+        </p>
+        <div class="hero-actions">
+          <a class="btn-primary" href="https://www.npmjs.com/package/drag-scroll-carousel">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M0 7.334v8h6.666v1.332H12v-1.332h12v-8H0zm6.666 6.664H5.334v-4H3.999v4H1.335V8.667h5.331v5.331zm4 0h-2.667V8.667h2.667v5.331zm12-5.331v4h-1.333v-4h-1.334v4h-1.333v-4h-1.334v5.331h5.334V8.667h-5.334v0h5.334z"/></svg>
+            View on npm
+          </a>
+          <a class="btn-secondary" href="https://github.com/Sahilattar8786/drag-scroll-carousel">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .3a12 12 0 00-3.8 23.38c.6.12.82-.26.82-.58v-2.02c-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.08-.74.08-.73.08-.73 1.2.09 1.84 1.24 1.84 1.24 1.07 1.83 2.8 1.3 3.49 1 .1-.78.42-1.3.76-1.6-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.39 1.24-3.22-.13-.3-.54-1.52.12-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 016.02 0c2.28-1.55 3.29-1.23 3.29-1.23.66 1.66.25 2.88.12 3.18a4.65 4.65 0 011.24 3.22c0 4.61-2.8 5.63-5.48 5.92.43.37.81 1.1.81 2.22v3.29c0 .32.22.7.82.58A12 12 0 0012 .3"/></svg>
+            GitHub
+          </a>
+        </div>
+        <div class="install-bar" onclick="navigator.clipboard.writeText('npm install drag-scroll-carousel');this.querySelector('.copy-icon').innerHTML='✓';setTimeout(()=>this.querySelector('.copy-icon').innerHTML='⧉',1500)">
+          <span>$</span> <code>npm install drag-scroll-carousel</code>
+          <span class="copy-icon">⧉</span>
+        </div>
+      </section>
+
+      <!-- Code Preview -->
+      <section class="code-section wrap">
+        <div class="terminal">
+          <div class="terminal-bar">
+            <span class="terminal-dot"></span>
+            <span class="terminal-dot"></span>
+            <span class="terminal-dot"></span>
+            <span class="terminal-title">index.js</span>
+          </div>
+          <pre><span class="kw">import</span> DragCarousel <span class="kw">from</span> <span class="str">'drag-scroll-carousel'</span>;
+
+<span class="kw">const</span> carousel = <span class="kw">new</span> <span class="fn">DragCarousel</span>(<span class="str">'#product-strip'</span>, {
+  speed<span class="op">:</span>         <span class="str">1.5</span>,
+  centerMode<span class="op">:</span>    <span class="kw">true</span>,
+  loop<span class="op">:</span>          <span class="kw">true</span>,
+  slideSelector<span class="op">:</span> <span class="str">'.card'</span>,
+  buttons<span class="op">:</span>       { prev<span class="op">:</span> <span class="str">'#prev'</span>, next<span class="op">:</span> <span class="str">'#next'</span> },
+});
+
+<span class="cm">// Cleanup when done</span>
+carousel.<span class="fn">destroy</span>();</pre>
+        </div>
+      </section>
+
+      <!-- Live Demo -->
+      <section class="demo-section wrap" id="demo">
+        <div class="section-label">Live Demo</div>
+        <div class="section-title">Try it &mdash; drag, swipe, or use the arrows</div>
+        <div class="demo-container">
+          <div class="demo-nav">
+            <button class="demo-btn" id="demo-prev">&#8592;</button>
+            <button class="demo-btn" id="demo-next">&#8594;</button>
+          </div>
+          <div class="demo-strip" id="demo-strip"></div>
+        </div>
+      </section>
+
+      <!-- Features -->
+      <section class="features wrap" id="features">
+        <div class="section-label">Features</div>
+        <div class="section-title">Everything you need, nothing you don't</div>
+        <div class="feature-grid">
+          <div class="feature-card">
+            <div class="feature-icon fi-drag">↔</div>
+            <h3>Drag to Scroll</h3>
+            <p>Native-feeling pointer-based scrolling with configurable speed multiplier.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon fi-center">⊙</div>
+            <h3>Center Mode</h3>
+            <p>Snaps to the nearest slide and centers it after drag ends. Buttons move by slide.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon fi-loop">∞</div>
+            <h3>Infinite Loop</h3>
+            <p>Seamless looping by cloning slides. Works even with very small slide sets.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon fi-touch">👆</div>
+            <h3>Touch + Mouse</h3>
+            <p>Pointer events work on desktop and mobile. No separate touch handler needed.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon fi-light">⚡</div>
+            <h3>Lightweight</h3>
+            <p>~3 KB total. Zero dependencies. Ships as a single class you can drop anywhere.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon fi-frame">⚛</div>
+            <h3>Framework Agnostic</h3>
+            <p>Use with vanilla JS, React, Shopify Liquid, or any HTML. Includes destroy() for cleanup.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- API -->
+      <section class="api-section wrap" id="api">
+        <div class="section-label">API Reference</div>
+        <div class="section-title">Simple, predictable options</div>
+        <div class="api-table-wrap">
+          <table>
+            <thead>
+              <tr><th>Option</th><th>Type</th><th>Default</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>speed</td>
+                <td class="type-col">number</td>
+                <td class="default-col">1.5</td>
+                <td>Pointer-movement to scroll multiplier</td>
+              </tr>
+              <tr>
+                <td>buttons</td>
+                <td class="type-col">object | null</td>
+                <td class="default-col">null</td>
+                <td>{ prev, next } — any valid querySelector string</td>
+              </tr>
+              <tr>
+                <td>centerMode</td>
+                <td class="type-col">boolean</td>
+                <td class="default-col">false</td>
+                <td>Snap to nearest slide and center it</td>
+              </tr>
+              <tr>
+                <td>loop</td>
+                <td class="type-col">boolean</td>
+                <td class="default-col">false</td>
+                <td>Infinite looping with cloned slides</td>
+              </tr>
+              <tr>
+                <td>slideSelector</td>
+                <td class="type-col">string | null</td>
+                <td class="default-col">null</td>
+                <td>Selector for slides (defaults to direct children)</td>
+              </tr>
+              <tr>
+                <td>minLoopSlides</td>
+                <td class="type-col">number</td>
+                <td class="default-col">3</td>
+                <td>Min visual slide count for loop cloning</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- CTA -->
+      <section class="cta wrap">
+        <h2>Start building in 30 seconds</h2>
+        <p>One install. One class. Drop it into any project and scroll beautifully.</p>
+        <div class="cta-actions">
+          <a class="btn-primary" href="https://www.npmjs.com/package/drag-scroll-carousel">
+            Install from npm
+          </a>
+          <a class="btn-secondary" href="https://github.com/Sahilattar8786/drag-scroll-carousel#readme">
+            Read the docs
+          </a>
+        </div>
+        <div class="cta-code">
+          <span>$</span> <code>npm install drag-scroll-carousel</code>
+        </div>
+      </section>
+
+      <!-- Framework compatibility -->
+      <section class="frameworks wrap">
+        <p>Works everywhere</p>
+        <div class="fw-logos">
+          <div class="fw-item">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M0 0h24v24H0z" fill="none"/><path d="M12 10.11c1.03 0 1.87.84 1.87 1.89 0 1-.84 1.85-1.87 1.85S10.13 13 10.13 12c0-1.05.84-1.89 1.87-1.89M7.37 20c.63.38 2.01-.2 3.6-1.7-.52-.59-1.03-1.23-1.51-1.9a22.7 22.7 0 01-2.4-.36c-.51 2.14-.32 3.61.31 3.96m.71-5.74l-.29-.51c-.11.29-.22.58-.29.86.27.06.57.11.88.16l-.3-.51m6.54-.76l.81-1.5-.81-1.5c-.3-.53-.62-1-.91-1.47C13.17 9 12.6 9 12 9c-.6 0-1.17 0-1.71.03-.29.47-.61.94-.91 1.47L8.57 12l.81 1.5c.3.53.62 1 .91 1.47.54.03 1.11.03 1.71.03.6 0 1.17 0 1.71-.03.29-.47.61-.94.91-1.47M12 6.78c-.19.22-.39.45-.59.72h1.18c-.2-.27-.4-.5-.59-.72m0 10.44c.19-.22.39-.45.59-.72h-1.18c.2.27.4.5.59.72M16.62 4c-.62-.38-2 .2-3.59 1.7.52.59 1.03 1.23 1.51 1.9.82.08 1.63.2 2.4.36.51-2.14.32-3.61-.32-3.96m-.7 5.74l.29.51c.11-.29.22-.58.29-.86-.27-.06-.57-.11-.88-.16l.3.51m1.45-7.05c1.47.84 1.63 3.05 1.01 5.63 2.54.75 4.37 1.99 4.37 3.68 0 1.69-1.83 2.93-4.37 3.68.62 2.58.46 4.79-1.01 5.63-1.46.84-3.45-.12-5.37-1.95-1.92 1.83-3.91 2.79-5.38 1.95-1.46-.84-1.62-3.05-1-5.63-2.54-.75-4.37-1.99-4.37-3.68 0-1.69 1.83-2.93 4.37-3.68-.62-2.58-.46-4.79 1-5.63 1.47-.84 3.46.12 5.38 1.95 1.92-1.83 3.91-2.79 5.37-1.95M17.08 12c.34.75.64 1.5.89 2.26 2.1-.63 3.28-1.53 3.28-2.26 0-.73-1.18-1.63-3.28-2.26-.25.76-.55 1.51-.89 2.26M6.92 12c-.34-.75-.64-1.5-.89-2.26-2.1.63-3.28 1.53-3.28 2.26 0 .73 1.18 1.63 3.28 2.26.25-.76.55-1.51.89-2.26m9 2.26l-.3.51c.31-.05.61-.1.88-.16-.07-.28-.18-.57-.29-.86l-.29.51m-2.89 4.04c1.59 1.5 2.97 2.08 3.59 1.7.64-.35.83-1.82.32-3.96-.77.16-1.58.28-2.4.36-.48.67-.99 1.31-1.51 1.9M8.08 9.74l.3-.51c-.31.05-.61.1-.88.16.07.28.18.57.29.86l.29-.51m2.89-4.04C9.38 4.2 8 3.62 7.37 4c-.63.35-.82 1.82-.31 3.96a22.7 22.7 0 012.4-.36c.48-.67.99-1.31 1.51-1.9z"/></svg>
+            React
+          </div>
+          <div class="fw-item">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M1 21L12 2l11 19H1zm3.47-2h15.06L12 5.99 4.47 19z"/></svg>
+            Vanilla JS
+          </div>
+          <div class="fw-item">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+            Next.js
+          </div>
+          <div class="fw-item">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+            Shopify
+          </div>
+          <div class="fw-item">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V8l8 5 8-5v10zm-8-7L4 6h16l-8 5z"/></svg>
+            CDN / HTML
+          </div>
+        </div>
+      </section>
+
+      <footer class="wrap">
+        <div class="footer-links">
+          <a href="https://github.com/Sahilattar8786/drag-scroll-carousel">GitHub</a>
+          <a href="https://www.npmjs.com/package/drag-scroll-carousel">npm</a>
+          <a href="https://unpkg.com/drag-scroll-carousel@1/examples/demo-cdn.html">JS Demo</a>
+          <a href="https://unpkg.com/drag-scroll-carousel@1/examples/demo-react-cdn.html">React Demo</a>
+          <a href="https://github.com/Sahilattar8786/drag-scroll-carousel#readme">Docs</a>
+        </div>
+        <p class="footer-copy">MIT License &middot; drag-scroll-carousel</p>
+      </footer>
+    </div>
+
+    <!-- Load the carousel from the same package on unpkg -->
+    <script src="https://unpkg.com/drag-scroll-carousel@1/index.js"></script>
+    <script>
+      (function () {
+        var strip = document.getElementById('demo-strip');
+        var items = [
+          { title: 'Wireless Headphones', price: '$79', img: 'https://picsum.photos/seed/headphones/400/280', cat: 'Electronics' },
+          { title: 'Leather Backpack', price: '$129', img: 'https://picsum.photos/seed/backpack/400/280', cat: 'Accessories' },
+          { title: 'Running Shoes', price: '$95', img: 'https://picsum.photos/seed/shoes/400/280', cat: 'Footwear' },
+          { title: 'Smart Watch', price: '$199', img: 'https://picsum.photos/seed/watch/400/280', cat: 'Electronics' },
+          { title: 'Sunglasses', price: '$55', img: 'https://picsum.photos/seed/sunglass/400/280', cat: 'Accessories' },
+          { title: 'Denim Jacket', price: '$110', img: 'https://picsum.photos/seed/jacket/400/280', cat: 'Clothing' },
+          { title: 'Ceramic Mug', price: '$18', img: 'https://picsum.photos/seed/mug/400/280', cat: 'Home' },
+          { title: 'Notebook Set', price: '$24', img: 'https://picsum.photos/seed/notebook/400/280', cat: 'Stationery' },
+        ];
+
+        items.forEach(function (item) {
+          var card = document.createElement('div');
+          card.className = 'demo-card';
+          card.innerHTML =
+            '<img class="demo-card-img" src="' + item.img + '" alt="' + item.title + '" loading="lazy">' +
+            '<div class="demo-card-body">' +
+              '<h4>' + item.title + '</h4>' +
+              '<div class="price">' + item.price + '</div>' +
+              '<div class="cat">' + item.cat + '</div>' +
+            '</div>';
+          strip.appendChild(card);
+        });
+
+        if (typeof DragCarousel !== 'undefined') {
+          new DragCarousel(strip, {
+            speed: 1.5,
+            centerMode: true,
+            loop: true,
+            slideSelector: '.demo-card',
+            buttons: { prev: '#demo-prev', next: '#demo-next' },
+          });
+        }
+      })();
+    </script>
+  </body>
+</html>
